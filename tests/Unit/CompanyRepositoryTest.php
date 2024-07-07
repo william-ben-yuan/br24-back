@@ -1,0 +1,57 @@
+<?php
+
+namespace Tests\Unit;
+
+use App\Models\Company;
+use App\Repositories\CompanyRepository;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class CompanyRepositoryTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected $repository;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->repository = new CompanyRepository();
+    }
+
+    public function testGetAllCompanies(): void
+    {
+        Company::factory()->count(3)->create();
+
+        $fetchedCompanys = $this->repository->getAllCompanies();
+
+        $this->assertCount(3, $fetchedCompanys);
+    }
+
+    public function testCreate(): void
+    {
+        $companyData = Company::factory()->make()->toArray();
+        $company = $this->repository->create($companyData);
+
+        $this->assertDatabaseHas('companies', ['id' => $company->id]);
+    }
+
+    public function testUpdate(): void
+    {
+        $company = Company::factory()->create();
+        $newCompanyData = Company::factory()->make()->toArray();
+
+        $updatedCompany = $this->repository->update($newCompanyData, $company);
+
+        $this->assertDatabaseHas('companies', ['id' => $updatedCompany->id]);
+    }
+
+    public function testDelete(): void
+    {
+        $company = Company::factory()->create();
+
+        $this->repository->delete($company);
+
+        $this->assertDatabaseMissing('companies', ['id' => $company->id]);
+    }
+}

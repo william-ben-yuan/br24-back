@@ -1,0 +1,50 @@
+services:
+  app:
+    build:
+      args:
+        user: user
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: br24
+    container_name: php-br24-container
+    restart: no
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - br24
+  db:
+    image: mysql:8.0
+    container_name: db-br24-container
+    restart: no
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./.docker/mysql:/docker-entrypoint-initdb.d
+      - dbdata:/var/lib/mysql
+    ports:
+      - 3306:3306
+    networks:
+      - br24
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-br24-container
+    restart: no
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/var/www
+      - ./.docker/nginx:/etc/nginx/conf.d/
+    networks:
+      - br24
+networks:
+  br24:
+    driver: bridge
+volumes:
+  dbdata:
