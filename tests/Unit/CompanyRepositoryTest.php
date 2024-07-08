@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\Company;
+use App\Models\Contact;
 use App\Repositories\CompanyRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -31,6 +32,7 @@ class CompanyRepositoryTest extends TestCase
     public function testCreate(): void
     {
         $companyData = Company::factory()->make()->toArray();
+        $companyData['contacts'] = [Contact::factory()->make()->toArray()];
         $company = $this->repository->create($companyData);
 
         $this->assertDatabaseHas('companies', ['id' => $company->id]);
@@ -40,7 +42,7 @@ class CompanyRepositoryTest extends TestCase
     {
         $company = Company::factory()->create();
         $newCompanyData = Company::factory()->make()->toArray();
-
+        $newCompanyData['contacts'] = [Contact::factory()->make()->toArray()];
         $updatedCompany = $this->repository->update($newCompanyData, $company);
 
         $this->assertDatabaseHas('companies', ['id' => $updatedCompany->id]);

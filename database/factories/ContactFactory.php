@@ -21,8 +21,7 @@ class ContactFactory extends Factory
             'name' => $this->faker->name,
             'last_name' => $this->faker->lastName,
             'email' => $this->faker->unique()->safeEmail,
-            'phone' => $this->faker->phoneNumber,
-            'company_id' => Company::factory()->create()->id,
+            'phone' => $this->faker->numerify('###########'),
         ];
     }
 }

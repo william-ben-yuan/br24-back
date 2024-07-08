@@ -27,7 +27,6 @@ class CompanyControllerTest extends TestCase
     {
         Company::factory()->count(3)->create();
 
-
         $response = $this->get('/api/companies');
 
         $response->assertStatus(Response::HTTP_OK);
@@ -41,6 +40,15 @@ class CompanyControllerTest extends TestCase
                 'city',
                 'uf',
                 'cnpj',
+                'contacts' => [
+                    '*' => [
+                        'id',
+                        'name',
+                        'last_name',
+                        'email',
+                        'phone',
+                    ],
+                ],
             ],
         ]);
     }
@@ -60,18 +68,34 @@ class CompanyControllerTest extends TestCase
             'address' => $company->address,
             'city' => $company->city,
             'uf' => $company->uf,
-            'cnpj' => $company->cnpj,
-            'contacts' => $company->contacts->toArray(),
+            'cnpj' => $company->cnpj
+        ]);
+        $response->assertJsonCount(3, 'contacts');
+        $response->assertJsonStructure([
+            'contacts' => [
+                '*' => [
+                    'id',
+                    'name',
+                    'last_name',
+                    'email',
+                    'phone',
+                ],
+            ],
         ]);
     }
 
     public function testStore(): void
     {
         $companyData = Company::factory()->make()->toArray();
+        $companyData['contacts'] = [Contact::factory()->make()->toArray()];
 
         $response = $this->post('/api/companies', $companyData);
 
         $response->assertStatus(Response::HTTP_CREATED);
+        foreach ($companyData['contacts'] as $contact) {
+            $this->assertDatabaseHas('contacts', $contact);
+        }
+        unset($companyData['contacts']);
         $this->assertDatabaseHas('companies', $companyData);
     }
 
@@ -79,10 +103,14 @@ class CompanyControllerTest extends TestCase
     {
         $company = Company::factory()->create();
         $newCompanyData = Company::factory()->make()->toArray();
-
+        $newCompanyData['contacts'] = [Contact::factory()->make()->toArray()];
         $response = $this->put("/api/companies/{$company->id}", $newCompanyData);
 
         $response->assertStatus(Response::HTTP_OK);
+        foreach ($newCompanyData['contacts'] as $contact) {
+            $this->assertDatabaseHas('contacts', $contact);
+        }
+        unset($newCompanyData['contacts']);
         $this->assertDatabaseHas('companies', $newCompanyData);
     }
 

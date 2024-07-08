@@ -19,8 +19,8 @@ class CompanyController extends Controller
 
     public function index(): JsonResponse
     {
-        $companys = $this->companyRepository->getAllCompanies();
-        return response()->json($companys);
+        $companies = $this->companyRepository->getAllCompanies();
+        return response()->json($companies);
     }
 
     public function store(CompanyRequest $request): JsonResponse
@@ -31,7 +31,8 @@ class CompanyController extends Controller
 
     public function show(Company $company): JsonResponse
     {
-        return response()->json($company->load('contacts'));
+        $company = $this->companyRepository->show($company);
+        return response()->json($company);
     }
 
     public function update(CompanyRequest $request, Company $company): JsonResponse
