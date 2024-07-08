@@ -20,6 +20,11 @@ class Company extends Model
         'cnpj',
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+    ];
+
     public function contacts(): HasMany
     {
         return $this->hasMany(Contact::class);
