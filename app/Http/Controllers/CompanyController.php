@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CompanyRequest;
 use App\Models\Company;
-use App\Repositories\Bitrix24Repository;
+use App\Repositories\Bitrix24\CompanyRepository as Bitrix24CompanyRepository;
 use App\Repositories\CompanyRepository;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,7 +13,7 @@ class CompanyController extends Controller
 {
     private $companyRepository;
 
-    public function __construct(Bitrix24Repository $companyRepository, /* Bitrix24Repository */)
+    public function __construct(Bitrix24CompanyRepository $companyRepository, /* Bitrix24Repository */)
     {
         $this->companyRepository = $companyRepository;
     }
@@ -26,7 +26,7 @@ class CompanyController extends Controller
 
     public function store(CompanyRequest $request): JsonResponse
     {
-        $company = $this->companyRepository->create($request->all());        
+        $company = $this->companyRepository->create($request->all());
         return response()->json($company, Response::HTTP_CREATED);
     }
 

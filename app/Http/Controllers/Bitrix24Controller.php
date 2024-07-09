@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\Bitrix24\BaseRepository;
 use Illuminate\Http\Request;
-use App\Repositories\Bitrix24Repository;
 
 class Bitrix24Controller extends Controller
 {
     private $bitrix24Repository;
 
-    public function __construct(Bitrix24Repository $bitrix24Repository)
+    public function __construct(BaseRepository $bitrix24Repository)
     {
         $this->bitrix24Repository = $bitrix24Repository;
     }
