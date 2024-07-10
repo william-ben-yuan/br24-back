@@ -13,7 +13,7 @@ class CompanyRepository extends BaseRepository
     }
 
     /**
-     * Get all companies.
+     * Get all companies and their contacts.
      * 
      * @return array
      */
@@ -33,32 +33,28 @@ class CompanyRepository extends BaseRepository
     }
 
     /**
-     * Create a company.
+     * Create a company and its contacts.
      * 
      * @param array $companyData
      * @return int
      */
     public function create(array $companyData): int
     {
-        $accessToken = $this->getAccessToken();
-
-        $companyResponse = $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.company.add", [
-            'query' => ['auth' => $accessToken],
-            'json' => ['fields' => [
+        $companyResponse = $this->makeBitrix24ApiCall("crm.company.add", 'GET',  [
+            'fields' => [
                 'TITLE' => $companyData['title'],
                 'EMAIL' => [['VALUE' => $companyData['email'], 'VALUE_TYPE' => 'WORK']],
                 'ADDRESS' => $companyData['address'],
                 'UF_CRM_1720527892434' => $companyData['uf'],
                 'UF_CRM_1720529084' => $companyData['city'],
                 'UF_CRM_1720528969' => $companyData['cnpj'],
-            ]]
+            ]
         ]);
 
         $companyId = $this->decodeResponse($companyResponse);
         foreach ($companyData['contacts'] as $contact) {
-            $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.contact.add", [
-                'query' => ['auth' => $accessToken],
-                'json' => ['fields' => [
+            $this->makeBitrix24ApiCall("crm.contact.add", 'GET', [
+                ['fields' => [
                     'NAME' => $contact['name'],
                     'LAST_NAME' => $contact['last_name'],
                     'PHONE' => [['VALUE' => $contact['phone'], 'VALUE_TYPE' => 'WORK']],
@@ -72,18 +68,14 @@ class CompanyRepository extends BaseRepository
     }
 
     /**
-     * Get a company.
+     * Get a company and its contacts.
      * 
      * @param int $companyId
      * @return array
      */
     public function show(int $companyId): array
     {
-        $accessToken = $this->getAccessToken();
-
-        $response = $this->httpClient->get("{$this->bitrix24BaseUrl}/rest/crm.company.get", [
-            'query' => ['auth' => $accessToken, 'id' => $companyId],
-        ]);
+        $response = $this->makeBitrix24ApiCall('crm.company.get', 'GET', ['id' => $companyId]);
 
         $response = $this->decodeResponse($response);
         $response['EMAIL'] = $response['EMAIL'][0]['VALUE'];
@@ -95,7 +87,7 @@ class CompanyRepository extends BaseRepository
     }
 
     /**
-     * Update a company.
+     * Update a company and its contacts.
      * 
      * @param array $companyData
      * @param int $companyId
@@ -103,19 +95,52 @@ class CompanyRepository extends BaseRepository
      */
     public function update(array $companyData, int $companyId): bool
     {
-        $accessToken = $this->getAccessToken();
-
-        $response = $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.company.update", [
-            'query' => ['auth' => $accessToken],
-            'json' => ['id' => $companyId, 'fields' => [
+        $response = $this->makeBitrix24ApiCall('crm.company.update', 'POST', [
+            'id' => $companyId,
+            'fields' => [
                 'TITLE' => $companyData['title'],
                 'EMAIL' => [['VALUE' => $companyData['email'], 'VALUE_TYPE' => 'WORK']],
                 'ADDRESS' => $companyData['address'],
                 'UF_CRM_1720527892434' => $companyData['uf'],
                 'UF_CRM_1720529084' => $companyData['city'],
                 'UF_CRM_1720528969' => $companyData['cnpj'],
-            ]]
+            ]
         ]);
+
+        // Update contacts, split them into two arrays: existing contacts and new contacts
+        $exitingContacts = $this->contactRepository->getContacts($companyId);
+        $contactsToKeep = [];
+        foreach ($companyData['contacts'] as $contact) {
+            if (isset($contact['id'])) {
+                $this->contactRepository->updateContact(
+                    $contact['id'],
+                    [
+                        'NAME' => $contact['name'],
+                        'LAST_NAME' => $contact['last_name'],
+                        'PHONE' => [['VALUE' => $contact['phone'], 'VALUE_TYPE' => 'WORK']],
+                        'EMAIL' => [['VALUE' => $contact['email'], 'VALUE_TYPE' => 'WORK']],
+                    ]
+                );
+                $contactsToKeep[] = $contact['id'];
+            } else {
+                $this->makeBitrix24ApiCall('crm.contact.add', 'POST', [
+                    'fields' => [
+                        'NAME' => $contact['name'],
+                        'LAST_NAME' => $contact['last_name'],
+                        'PHONE' => [['VALUE' => $contact['phone'], 'VALUE_TYPE' => 'WORK']],
+                        'EMAIL' => [['VALUE' => $contact['email'], 'VALUE_TYPE' => 'WORK']],
+                        'COMPANY_ID' => $companyId,
+                    ]
+                ]);
+            }
+        }
+
+        // Delete contacts that are not in the contactsToKeep array
+        foreach ($exitingContacts as $contact) {
+            if (!in_array($contact['ID'], $contactsToKeep)) {
+                $this->contactRepository->deleteContact($contact['ID']);
+            }
+        }
 
         return $this->decodeResponse($response);
     }
@@ -128,12 +153,7 @@ class CompanyRepository extends BaseRepository
      */
     public function delete(int $companyId): bool
     {
-        $accessToken = $this->getAccessToken();
-
-        $response = $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.company.delete", [
-            'query' => ['auth' => $accessToken, 'id' => $companyId],
-        ]);
-
+        $response = $this->makeBitrix24ApiCall('crm.company.delete', 'POST', ['id' => $companyId],);
         return $this->decodeResponse($response);
     }
 }

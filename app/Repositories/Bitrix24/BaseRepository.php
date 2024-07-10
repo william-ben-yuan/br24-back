@@ -153,4 +153,30 @@ class BaseRepository
         }
         return $outputArray;
     }
+
+    /**
+     * Make a call to the Bitrix24 API.
+     * 
+     * @param string $endpoint
+     * @param string $method
+     * @param array $data
+     * @return mixed
+     */
+    protected function makeBitrix24ApiCall($endpoint, $method = 'GET', $data = [])
+    {
+        $accessToken = $this->getAccessToken();
+        $url = "{$this->bitrix24BaseUrl}/rest/{$endpoint}";
+
+        $options = ['query' => ['auth' => $accessToken]];
+        if (!empty($data)) {
+            if (strtoupper($method) === 'GET') {
+                $options['query'] = array_merge($options['query'], $data);
+            } else {
+                $options['json'] = $data;
+            }
+        }
+
+        $response = $this->httpClient->request($method, $url, $options);
+        return $response;
+    }
 }

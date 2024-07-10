@@ -17,16 +17,7 @@ class ContactRepository extends BaseRepository
      */
     public function getContacts(int $companyId): array
     {
-        $accessToken = $this->getAccessToken();
-
-        $query = http_build_query([
-            'auth' => $accessToken,
-            'filter' => [
-                'COMPANY_ID' => $companyId
-            ]
-        ]);
-        $response = $this->httpClient->get("{$this->bitrix24BaseUrl}/rest/crm.contact.list?$query");
-
+        $response = $this->makeBitrix24ApiCall('crm.contact.list', 'GET', ['filter' => ['COMPANY_ID' => $companyId]]);
         return $this->decodeResponse($response);
     }
 
@@ -55,12 +46,7 @@ class ContactRepository extends BaseRepository
      */
     public function showContact(int $contactId): array
     {
-        $accessToken = $this->getAccessToken();
-
-        $response = $this->httpClient->get("{$this->bitrix24BaseUrl}/rest/crm.contact.get", [
-            'query' => ['auth' => $accessToken, 'id' => $contactId],
-        ]);
-
+        $response = $this->makeBitrix24ApiCall('crm.contact.get', 'GET', ['id' => $contactId]);
         return $this->decodeResponse($response);
     }
 
@@ -72,13 +58,7 @@ class ContactRepository extends BaseRepository
      */
     public function createContact(array $contactData): array
     {
-        $accessToken = $this->getAccessToken();
-
-        $response = $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.contact.add", [
-            'query' => ['auth' => $accessToken],
-            'json' => ['fields' => $contactData]
-        ]);
-
+        $response = $this->makeBitrix24ApiCall('crm.contact.add', 'POST', ['fields' => $contactData]);
         return $this->decodeResponse($response);
     }
 
@@ -89,15 +69,9 @@ class ContactRepository extends BaseRepository
      * @param array $contactData
      * @return array
      */
-    public function updateContact(int $contactId, array $contactData): array
+    public function updateContact(int $contactId, array $contactData): bool
     {
-        $accessToken = $this->getAccessToken();
-
-        $response = $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.contact.update", [
-            'query' => ['auth' => $accessToken],
-            'json' => ['id' => $contactId, 'fields' => $contactData]
-        ]);
-
+        $response = $this->makeBitrix24ApiCall('crm.contact.update', 'POST', ['id' => $contactId, 'fields' => $contactData]);
         return $this->decodeResponse($response);
     }
 
@@ -108,10 +82,6 @@ class ContactRepository extends BaseRepository
      */
     public function deleteContact(int $contactId): void
     {
-        $accessToken = $this->getAccessToken();
-
-        $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.contact.delete", [
-            'query' => ['auth' => $accessToken, 'id' => $contactId],
-        ]);
+        $this->makeBitrix24ApiCall('crm.contact.delete', 'POST', ['id' => $contactId]);
     }
 }
