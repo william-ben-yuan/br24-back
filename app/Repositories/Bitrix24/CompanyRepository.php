@@ -2,15 +2,21 @@
 
 namespace App\Repositories\Bitrix24;
 
-use App\Models\Company;
-
 class CompanyRepository extends BaseRepository
 {
-    public function __construct()
+    private $contactRepository;
+
+    public function __construct(ContactRepository $contactRepository)
     {
         parent::__construct();
+        $this->contactRepository = $contactRepository;
     }
 
+    /**
+     * Get all companies.
+     * 
+     * @return array
+     */
     public function getAllCompanies(): array
     {
         $accessToken = $this->getAccessToken();
@@ -19,12 +25,20 @@ class CompanyRepository extends BaseRepository
             'query' => ['auth' => $accessToken],
         ]);
 
-        $jsonResponse = json_decode((string) $response->getBody(), true);
-        $result = $jsonResponse['result'];
-        return $result;
+        $companies = $this->decodeResponse($response);
+        foreach ($companies as $key => $company) {
+            $companies[$key]['contacts'] = $this->contactRepository->getContacts($company['ID']);
+        }
+        return $this->arrayKeysToLower($companies);
     }
 
-    public function create(array $companyData): array
+    /**
+     * Create a company.
+     * 
+     * @param array $companyData
+     * @return int
+     */
+    public function create(array $companyData): int
     {
         $accessToken = $this->getAccessToken();
 
@@ -40,9 +54,7 @@ class CompanyRepository extends BaseRepository
             ]]
         ]);
 
-        $company = json_decode((string) $companyResponse->getBody(), true);
-        $companyId = $company['result'];
-
+        $companyId = $this->decodeResponse($companyResponse);
         foreach ($companyData['contacts'] as $contact) {
             $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.contact.add", [
                 'query' => ['auth' => $accessToken],
@@ -56,27 +68,46 @@ class CompanyRepository extends BaseRepository
             ]);
         }
 
-        return $company;
+        return $companyId;
     }
 
-    public function show(Company $company): array
+    /**
+     * Get a company.
+     * 
+     * @param int $companyId
+     * @return array
+     */
+    public function show(int $companyId): array
     {
         $accessToken = $this->getAccessToken();
 
         $response = $this->httpClient->get("{$this->bitrix24BaseUrl}/rest/crm.company.get", [
-            'query' => ['auth' => $accessToken, 'id' => $company->id],
+            'query' => ['auth' => $accessToken, 'id' => $companyId],
         ]);
 
-        return json_decode((string) $response->getBody(), true);
+        $response = $this->decodeResponse($response);
+        $response['EMAIL'] = $response['EMAIL'][0]['VALUE'];
+        $response['CITY'] = $response['UF_CRM_1720529084'];
+        $response['UF'] = $response['UF_CRM_1720527892434'];
+        $response['CNPJ'] = $response['UF_CRM_1720528969'];
+        $response['contacts'] = $this->contactRepository->getContactsDetails($companyId);
+        return $this->arrayKeysToLower($response);
     }
 
-    public function update(array $companyData, Company $company): array
+    /**
+     * Update a company.
+     * 
+     * @param array $companyData
+     * @param int $companyId
+     * @return bool
+     */
+    public function update(array $companyData, int $companyId): bool
     {
         $accessToken = $this->getAccessToken();
 
         $response = $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.company.update", [
             'query' => ['auth' => $accessToken],
-            'json' => ['id' => $company->id, 'fields' => [
+            'json' => ['id' => $companyId, 'fields' => [
                 'TITLE' => $companyData['title'],
                 'EMAIL' => [['VALUE' => $companyData['email'], 'VALUE_TYPE' => 'WORK']],
                 'ADDRESS' => $companyData['address'],
@@ -86,17 +117,23 @@ class CompanyRepository extends BaseRepository
             ]]
         ]);
 
-
-
-        return json_decode((string) $response->getBody(), true);
+        return $this->decodeResponse($response);
     }
 
-    public function delete(Company $company): void
+    /**
+     * Delete a company.
+     * 
+     * @param int $companyId
+     * @return bool
+     */
+    public function delete(int $companyId): bool
     {
         $accessToken = $this->getAccessToken();
 
-        $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.company.delete", [
-            'query' => ['auth' => $accessToken, 'id' => $company->id],
+        $response = $this->httpClient->post("{$this->bitrix24BaseUrl}/rest/crm.company.delete", [
+            'query' => ['auth' => $accessToken, 'id' => $companyId],
         ]);
+
+        return $this->decodeResponse($response);
     }
 }

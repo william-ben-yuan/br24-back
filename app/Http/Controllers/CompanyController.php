@@ -30,21 +30,21 @@ class CompanyController extends Controller
         return response()->json($company, Response::HTTP_CREATED);
     }
 
-    public function show(Company $company): JsonResponse
+    public function show(int $companyId): JsonResponse
     {
-        $company = $this->companyRepository->show($company);
+        $company = $this->companyRepository->show($companyId);
         return response()->json($company);
     }
 
-    public function update(CompanyRequest $request, Company $company): JsonResponse
+    public function update(CompanyRequest $request, int $companyId): JsonResponse
     {
-        $company = $this->companyRepository->update($request->all(), $company);
+        $company = $this->companyRepository->update($request->all(), $companyId);
         return response()->json($company);
     }
 
-    public function destroy(Company $company): JsonResponse
+    public function destroy(int $companyId): JsonResponse
     {
-        $this->companyRepository->delete($company);
-        return response()->json(null, Response::HTTP_NO_CONTENT);
+        $response = $this->companyRepository->delete($companyId);
+        return response()->json($response, Response::HTTP_NO_CONTENT);
     }
 }

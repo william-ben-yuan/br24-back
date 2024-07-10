@@ -14,13 +14,26 @@ class CompanyRepository
         }])->get();
     }
 
-    public function show(Company $company): Company
+    /**
+     * Get a company.
+     * 
+     * @param int $companyId
+     * @return Company
+     */
+    public function show(int $companyId): Company
     {
+        $company = Company::findOrFail($companyId);
         return $company->load(['contacts' => function ($query) {
             $query->orderBy('name', 'asc');
         }]);
     }
 
+    /**
+     * Create a company.
+     * 
+     * @param array $request
+     * @return Company
+     */
     public function create(array $request): Company
     {
         $company = Company::create($request);
@@ -28,8 +41,16 @@ class CompanyRepository
         return $company;
     }
 
-    public function update(array $request, Company $company): Company
+    /**
+     * Update a company.
+     * 
+     * @param array $request
+     * @param int $companyId
+     * @return Company
+     */
+    public function update(array $request, int $companyId): Company
     {
+        $company = Company::findOrFail($companyId);
         $company->update($request);
         $existingContacts = $company->contacts->pluck('id');
         $newContacts = collect($request['contacts'])->pluck('id');
@@ -48,8 +69,15 @@ class CompanyRepository
         }]);
     }
 
-    public function delete(Company $company): void
+    /**
+     * Delete a company.
+     * 
+     * @param int $companyId
+     * @return bool
+     */
+    public function delete(int $companyId): bool
     {
-        $company->delete();
+        $company = Company::findOrFail($companyId);
+        return $company->delete();
     }
 }

@@ -25,6 +25,11 @@ class BaseRepository
         $this->httpClient = new Client();
     }
 
+    /**
+     * Get the access token.
+     * 
+     * @return string
+     */
     protected function getAccessToken(): string
     {
         $token = OauthToken::find(1);
@@ -40,6 +45,12 @@ class BaseRepository
         throw new \Exception('No valid access token found.');
     }
 
+    /**
+     * Refresh the access token.
+     * 
+     * @param OauthToken $token
+     * @return string
+     */
     protected function refreshAccessToken(OauthToken $token): string
     {
         $query = http_build_query([
@@ -60,6 +71,12 @@ class BaseRepository
         return $token->access_token;
     }
 
+    /**
+     * Obtain the user information from Bitrix24.
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function handleProviderCallback(Request $request): JsonResponse
     {
         $query = http_build_query([
@@ -85,6 +102,11 @@ class BaseRepository
         return response()->json(['message' => 'Token stored successfully']);
     }
 
+    /**
+     * Redirect the user to the Bitrix24 authentication page.
+     * 
+     * @return RedirectResponse|null
+     */
     public function redirectToProvider(): RedirectResponse | null
     {
         $token = OauthToken::find(1);
@@ -98,5 +120,37 @@ class BaseRepository
 
             return redirect("{$this->bitrix24BaseUrl}/oauth/authorize?$query");
         }
+    }
+
+    /**
+     * Decode the response from the Bitrix24 API.
+     * 
+     * @param mixed $response
+     * @return mixed
+     */
+    protected function decodeResponse($response): mixed
+    {
+        $decodedResponse = json_decode((string) $response->getBody(), true);
+        return $decodedResponse['result'] ?? null; // Return null or an appropriate default if 'result' key is not set
+    }
+
+    /**
+     * Recursively converts all keys in an array to lowercase.
+     * (Bitrix24 API return the keys in uppercase)
+     * 
+     * @param array $inputArray
+     * @return array
+     */
+    function arrayKeysToLower(array $inputArray): array
+    {
+        $outputArray = [];
+        foreach ($inputArray as $key => $value) {
+            $key = strtolower($key);
+            if (is_array($value)) {
+                $value = $this->arrayKeysToLower($value);
+            }
+            $outputArray[$key] = $value;
+        }
+        return $outputArray;
     }
 }
