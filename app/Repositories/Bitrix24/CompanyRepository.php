@@ -19,11 +19,7 @@ class CompanyRepository extends BaseRepository
      */
     public function getAllCompanies(): array
     {
-        $accessToken = $this->getAccessToken();
-
-        $response = $this->httpClient->get("{$this->bitrix24BaseUrl}/rest/crm.company.list", [
-            'query' => ['auth' => $accessToken],
-        ]);
+        $response = $this->makeBitrix24ApiCall('rest/crm.company.list', 'GET');
 
         $companies = $this->decodeResponse($response);
         foreach ($companies as $key => $company) {
@@ -93,7 +89,7 @@ class CompanyRepository extends BaseRepository
      * @param int $companyId
      * @return bool
      */
-    public function update(array $companyData, int $companyId): bool
+    public function update(int $companyId, array $companyData): bool
     {
         $response = $this->makeBitrix24ApiCall('crm.company.update', 'POST', [
             'id' => $companyId,

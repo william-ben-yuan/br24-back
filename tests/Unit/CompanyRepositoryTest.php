@@ -41,18 +41,24 @@ class CompanyRepositoryTest extends TestCase
     public function testUpdate(): void
     {
         $company = Company::factory()->create();
+        Contact::factory()->for($company)->create();
         $newCompanyData = Company::factory()->make()->toArray();
         $newCompanyData['contacts'] = [Contact::factory()->make()->toArray()];
-        $updatedCompany = $this->repository->update($newCompanyData, $company);
+        $this->put("/api/companies/{$company->id}", $newCompanyData);
+        $this->repository->update($company->id, $newCompanyData);
 
-        $this->assertDatabaseHas('companies', ['id' => $updatedCompany->id]);
+        foreach ($newCompanyData['contacts'] as $contact) {
+            $this->assertDatabaseHas('contacts', $contact);
+        }
+        unset($newCompanyData['contacts']);
+        $this->assertDatabaseHas('companies', $newCompanyData);
     }
 
     public function testDelete(): void
     {
         $company = Company::factory()->create();
 
-        $this->repository->delete($company);
+        $this->repository->delete($company->id);
 
         $this->assertDatabaseMissing('companies', ['id' => $company->id]);
     }

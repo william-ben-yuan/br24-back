@@ -6,15 +6,23 @@ use App\Http\Requests\CompanyRequest;
 use App\Repositories\Bitrix24\CompanyRepository as Bitrix24CompanyRepository;
 use App\Repositories\CompanyRepository;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\App;
 use Symfony\Component\HttpFoundation\Response;
 
 class CompanyController extends Controller
 {
     private $companyRepository;
 
-    public function __construct(Bitrix24CompanyRepository $companyRepository, /* Bitrix24Repository */)
+    public function __construct()
     {
-        $this->companyRepository = $companyRepository;
+        $repositoryType = env('COMPANY_REPOSITORY_TYPE');
+        switch ($repositoryType) {
+            case 'Bitrix24CompanyRepository':
+                $this->companyRepository = App::make(Bitrix24CompanyRepository::class);
+                break;
+            default:
+                $this->companyRepository = App::make(CompanyRepository::class);
+        }
     }
 
     /**
@@ -61,7 +69,7 @@ class CompanyController extends Controller
      */
     public function update(CompanyRequest $request, int $companyId): JsonResponse
     {
-        $company = $this->companyRepository->update($request->all(), $companyId);
+        $company = $this->companyRepository->update($companyId, $request->all());
         return response()->json($company);
     }
 

@@ -1,6 +1,6 @@
 # Getting started
 
-Para iniciar o projeto crie o arquivo .env e depois rode o comando 
+Para iniciar o projeto crie o arquivo .env e depois rode o comando
 
 ```
 docker compose build
@@ -29,15 +29,14 @@ php artisan migrate
 
 Acessar o endpoint /api/auth/bitrix24 que irá fazer o cadastro da chave de acesso
 
-
 ## Creating test database
 
-Para criar o banco de dados de teste do Laravel: 
+Para criar o banco de dados de teste do Laravel:
 
 ```
 docker exec -it db-br24-container mysql -u root -p
 
-mysql> GRANT ALL PRIVILEGES ON `laravel_test`.* TO 'admin'@'%';
+GRANT ALL PRIVILEGES ON `laravel_test`.* TO 'admin'@'%';
 ```
 
 ## Observations
