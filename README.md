@@ -41,5 +41,4 @@ GRANT ALL PRIVILEGES ON `laravel_test`.* TO 'admin'@'%';
 
 ## Observations
 
-Poderia ter usado injeção do objeto Company direto no controller, mas como deixei flexível pra usar tanto a versão de banco local e da API Bitrix, decidi usar somente o id da empresa mesmo
-Pode usar a variável de ambiente para trocar entre os repositórios
+Poderia ter usado injeção do objeto Company direto no controller, mas como deixei flexível pra usar tanto a versão de banco local e da API Bitrix, decidi usar somente o id da empresa mesmo e pode usar a variável de ambiente para trocar entre os repositórios
