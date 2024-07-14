@@ -4,15 +4,19 @@ namespace App\Repositories;
 
 use App\Models\Company;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CompanyRepository
 {
     public function getAllCompanies(): Collection
     {
-        return Company::with(['contacts' => function ($query) {
-            $query->orderBy('name', 'asc');
-        }])->get();
+        // Cache the companies forever
+        return Cache::rememberForever('companies', function () {
+            return Company::with(['contacts' => function ($query) {
+                $query->orderBy('name', 'asc');
+            }])->get();
+        });
     }
 
     /**
@@ -23,10 +27,15 @@ class CompanyRepository
      */
     public function show(int $companyId): Company
     {
-        $company = Company::findOrFail($companyId);
-        return $company->load(['contacts' => function ($query) {
-            $query->orderBy('name', 'asc');
-        }]);
+        // Cache the company for 60 minutes
+        return Cache::remember('company.' . $companyId, 60, function () use ($companyId) {
+            // If you want to use tags, you can use the following code instead of the above code
+            //return Cache::tags(['companies'])->remember("company.{$id}", 60*60, function () use ($id) {
+
+            return Company::with(['contacts' => function ($query) {
+                $query->orderBy('name', 'asc');
+            }])->findOrFail($companyId);
+        });
     }
 
     /**
@@ -43,6 +52,7 @@ class CompanyRepository
             return $company;
         });
 
+        $this->clearCompaniesCache();
         return $company;
     }
 
@@ -73,6 +83,7 @@ class CompanyRepository
             return $company;
         });
 
+        $this->clearCompaniesCache($companyId);
         return $company->load(['contacts' => function ($query) {
             $query->orderBy('name', 'asc');
         }]);
@@ -91,7 +102,17 @@ class CompanyRepository
             $company->contacts()->delete();
             return $company->delete();
         });
-
+        $this->clearCompaniesCache($companyId);
         return $result;
+    }
+
+    protected function clearCompaniesCache(int $id = null)
+    {
+        Cache::forget("companies");
+        if ($id) {
+            Cache::forget("company.{$id}");
+        }
+        // If you want to use tags, you can use the following code instead of the above code, but it will clear all companies cache
+        // Cache::tags(['companies'])->flush();
     }
 }
