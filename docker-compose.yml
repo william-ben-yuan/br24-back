@@ -1,11 +1,11 @@
 services:
     app:
         build:
+            context: .
+            dockerfile: Dockerfile
             args:
                 user: user
                 uid: 1000
-            context: ./
-            dockerfile: Dockerfile
         image: br24
         container_name: php-br24-container
         restart: no
@@ -51,8 +51,51 @@ services:
             - 6379:6379
         networks:
             - br24
+
+    master:
+        build:
+            context: .
+            dockerfile: ./.dockerfiles/Dockerfile.locust
+        image: locust-master
+        ports:
+            - "8089:8089"
+        volumes:
+            - ./locust:/mnt/locust
+        command: -f /mnt/locust/script.py --master -H http://nginx:80
+        networks:
+            - br24
+        depends_on:
+            - nginx
+
+    worker1:
+        build:
+            context: .
+            dockerfile: ./.dockerfiles/Dockerfile.locust
+        image: locust-worker
+        volumes:
+            - ./locust:/mnt/locust
+        command: -f /mnt/locust/script.py --worker --master-host master
+        networks:
+            - br24
+        depends_on:
+            - master
+
+    worker2:
+        build:
+            context: .
+            dockerfile: ./.dockerfiles/Dockerfile.locust
+        image: locust-worker
+        volumes:
+            - ./locust:/mnt/locust
+        command: -f /mnt/locust/script.py --worker --master-host master
+        networks:
+            - br24
+        depends_on:
+            - master
+
 networks:
     br24:
         driver: bridge
+
 volumes:
     dbdata:

@@ -39,6 +39,11 @@ docker exec -it db-br24-container mysql -u root -p
 GRANT ALL PRIVILEGES ON `laravel_test`.* TO 'admin'@'%';
 ```
 
+## Load test
+
+Acesse http://localhost:8089/
+E no host preencha http://nginx:80
+
 ## Observations
 
 Poderia ter usado injeção do objeto Company direto no controller, mas como deixei flexível pra usar tanto a versão de banco local e da API Bitrix, decidi usar somento o id da empresa mesmo
